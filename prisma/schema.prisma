@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model User {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  name          String?
+  avatar        String?
+  password      String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  accounts      Account[]
+  paidExpenses  Expense[]    @relation("PaidBy")
+  memberships   Membership[]
+  sessions      Session[]
+  assignedTasks Task[]       @relation("AssignedTo")
+}
+
+model VerificationToken {
+  id        String   @id @default(uuid())
+  email     String
+  token     String
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([email, token])
+}
+
+model Colocation {
+  id             String          @id @default(uuid())
+  name           String
+  address        String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  calendarEvents CalendarEvent[]
+  documents      Document[]
+  expenses       Expense[]
+  invitations    Invitation[]
+  memberships    Membership[]
+  messages       Message[]
+  shoppingItems  ShoppingItem[]
+  tasks          Task[]
+}
+
+model Membership {
+  id           String     @id @default(uuid())
+  userId       String
+  colocationId String
+  role         Role       @default(MEMBER)
+  joinedAt     DateTime   @default(now())
+  leftAt       DateTime?
+  colocation   Colocation @relation(fields: [colocationId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, colocationId])
+  @@index([userId])
+  @@index([colocationId])
+}
+
+model Invitation {
+  id           String     @id @default(uuid())
+  email        String
+  colocationId String
+  token        String     @unique
+  status       String     @default("pending")
+  createdAt    DateTime   @default(now())
+  expiresAt    DateTime
+  colocation   Colocation @relation(fields: [colocationId], references: [id], onDelete: Cascade)
+
+  @@index([colocationId])
+  @@index([token])
+}
+
+model Expense {
+  id           String     @id @default(uuid())
+  colocationId String
+  paidByUserId String
+  amount       Decimal    @db.Decimal(10, 2)
+  description  String
+  category     String
+  date         DateTime
+  receipt      String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  colocation   Colocation @relation(fields: [colocationId], references: [id], onDelete: Cascade)
+  paidBy       User       @relation("PaidBy", fields: [paidByUserId], references: [id])
+
+  @@index([paidByUserId])
+  @@index([colocationId])
+}
+
+model Task {
+  id               String        @id @default(uuid())
+  colocationId     String
+  name             String
+  description      String
+  assignedToUserId String?
+  dueDate          DateTime
+  completed        Boolean       @default(false)
+  recurring        RecurringType @default(NONE)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  assignedTo       User?         @relation("AssignedTo", fields: [assignedToUserId], references: [id])
+  colocation       Colocation    @relation(fields: [colocationId], references: [id], onDelete: Cascade)
+
+  @@index([assignedToUserId])
+  @@index([colocationId])
+}
+
+model ShoppingItem {
+  id           String     @id @default(uuid())
+  colocationId String
+  name         String
+  quantity     Int
+  purchased    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  colocation   Colocation @relation(fields: [colocationId], references: [id], onDelete: Cascade)
+
+  @@index([colocationId])
+}
+
+model CalendarEvent {
+  id           String     @id @default(uuid())
+  colocationId String
+  title        String
+  description  String?
+  startDate    DateTime
+  endDate      DateTime
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  colocation   Colocation @relation(fields: [colocationId], references: [id], onDelete: Cascade)
+
+  @@index([colocationId])
+}
+
+model Message {
+  id           String     @id @default(uuid())
+  colocationId String
+  senderId     String
+  content      String
+  createdAt    DateTime   @default(now())
+  colocation   Colocation @relation(fields: [colocationId], references: [id], onDelete: Cascade)
+
+  @@index([colocationId])
+}
+
+model Document {
+  id           String     @id @default(uuid())
+  colocationId String
+  name         String
+  url          String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  colocation   Colocation @relation(fields: [colocationId], references: [id], onDelete: Cascade)
+
+  @@index([colocationId])
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum RecurringType {
+  NONE
+  DAILY
+  WEEKLY
+  MONTHLY
+}
