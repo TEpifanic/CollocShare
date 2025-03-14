@@ -7,6 +7,19 @@ export interface Colocation {
   address: string;
   createdAt: string;
   updatedAt: string;
+  members?: Array<{
+    id: string;
+    userId: string;
+    role: string;
+    leftAt: string | null;
+    isCurrentUser: boolean;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      avatar?: string;
+    }
+  }>;
 }
 
 export interface CreateColocationData {
@@ -31,6 +44,32 @@ export const useColocations = () => {
   const getColocations = async (): Promise<Colocation[]> => {
     const response = await axios.get("/api/colocation");
     return response.data.colocations;
+  };
+
+  // Récupérer les détails d'une colocation spécifique
+  const getColocationDetails = async (colocationId: string): Promise<Colocation> => {
+    const response = await axios.get(`/api/colocation/${colocationId}`);
+    
+    // Correction du problème: l'API renvoie les membres sous la clé 'membres' (en français)
+    // mais notre interface attend 'members' (en anglais)
+    const colocation = response.data.colocation;
+    const membres = response.data.membres;
+    
+    console.log("Données brutes de l'API:", response.data);
+    console.log("Membres récupérés de l'API:", membres);
+    
+    // Ajouter les membres à l'objet colocation
+    if (membres && Array.isArray(membres)) {
+      colocation.members = membres.map(membre => ({
+        ...membre,
+        isCurrentUser: membre.user.id === (queryClient.getQueryData(["user"]) as any)?.id
+      }));
+    } else {
+      console.error("Aucun membre trouvé dans la réponse de l'API ou format incorrect");
+      colocation.members = [];
+    }
+    
+    return colocation;
   };
 
   // Mutation pour créer une nouvelle colocation
@@ -95,6 +134,15 @@ export const useColocations = () => {
     queryFn: getColocations,
   });
 
+  // Fonction pour créer une requête de détails de colocation
+  const useColocationDetailsQuery = (colocationId: string) => {
+    return useQuery({
+      queryKey: ["colocation", colocationId],
+      queryFn: () => getColocationDetails(colocationId),
+      enabled: !!colocationId,
+    });
+  };
+
   // Mutation pour créer une colocation
   const createColocationMutation = useMutation({
     mutationFn: createColocation,
@@ -148,5 +196,8 @@ export const useColocations = () => {
     deleteColocation: deleteColocationMutation.mutate,
     isDeletingColocation: deleteColocationMutation.isPending,
     deleteColocationError: deleteColocationMutation.error,
+    
+    // Ajouter la fonction pour récupérer les détails d'une colocation
+    useColocationDetailsQuery,
   };
 }; 

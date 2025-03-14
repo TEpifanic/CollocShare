@@ -221,6 +221,35 @@ export default function ColocPage({ params }: ColocPageProps) {
     </Card>
   );
 
+  // Ajouter une section pour les fonctionnalités de la colocation après la section des membres
+  const renderFonctionnalitesSection = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle>Fonctionnalités</CardTitle>
+        <CardDescription>
+          Gérez votre colocation avec ces outils
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Link href={`/colocations/${id}/expenses`} className="block">
+            <Card className="h-full hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="text-base">Dépenses partagées</CardTitle>
+                <CardDescription>Gérez les dépenses et les remboursements</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm">Suivez qui a payé quoi, calculez les soldes entre membres et simplifiez les remboursements.</p>
+              </CardContent>
+            </Card>
+          </Link>
+          
+          {/* Emplacement pour d'autres fonctionnalités à venir */}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   // Ajouter un bouton de suppression de la colocation dans les paramètres
   const renderSettingsSection = () => (
     <Card>
@@ -272,57 +301,37 @@ export default function ColocPage({ params }: ColocPageProps) {
   // Ajouter les modales de confirmation
   return (
     <div className="container max-w-5xl mx-auto py-8 px-4">
-      <div className="mb-6 flex justify-between items-center">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <Button variant="ghost" size="sm" asChild className="mb-2">
-            <Link href="/colocations" className="flex items-center">
-              <Home className="mr-2 h-4 w-4" />
-              Retour aux colocations
-            </Link>
-          </Button>
-          <h1 className="text-3xl font-bold">{colocation.name}</h1>
+          <h1 className="text-2xl font-bold">{colocation.name}</h1>
           <p className="text-slate-500">{colocation.address}</p>
         </div>
+        <Button variant="outline" asChild>
+          <Link href="/colocations">Retour aux colocations</Link>
+        </Button>
       </div>
 
       <Tabs defaultValue="overview">
         <TabsList className="mb-6">
           <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
-          <TabsTrigger value="members">Membres</TabsTrigger>
-          <TabsTrigger value="settings">Paramètres</TabsTrigger>
+          <TabsTrigger value="membres">Membres</TabsTrigger>
+          {isAdmin && <TabsTrigger value="settings">Paramètres</TabsTrigger>}
         </TabsList>
-        
-        <TabsContent value="overview">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2">
-              {/* Contenu principal */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Bienvenue dans votre colocation</CardTitle>
-                  <CardDescription>
-                    Gérez facilement votre vie en colocation
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p>Contenu de la colocation...</p>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div>
-              {/* Sidebar avec les membres */}
-              {renderMembresSection()}
-            </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="members">
+
+        <TabsContent value="overview" className="space-y-6">
+          {renderFonctionnalitesSection()}
           {renderMembresSection()}
         </TabsContent>
-        
-        <TabsContent value="settings">
-          {renderSettingsSection()}
+
+        <TabsContent value="membres">
+          {renderMembresSection()}
         </TabsContent>
+
+        {isAdmin && (
+          <TabsContent value="settings" className="space-y-6">
+            {renderSettingsSection()}
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Modale de confirmation pour supprimer un membre */}
