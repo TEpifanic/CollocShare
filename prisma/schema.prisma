@@ -46,12 +46,14 @@ model User {
   updatedAt           DateTime             @updatedAt
   accounts            Account[]
   paidExpenses        Expense[]            @relation("PaidBy")
-  memberships         Membership[]
-  sessions            Session[]
-  assignedTasks       Task[]               @relation("AssignedTo")
   expenseParticipants ExpenseParticipant[]
   settlementsFrom     ExpenseSettlement[]  @relation("SettlementsFrom")
   settlementsTo       ExpenseSettlement[]  @relation("SettlementsTo")
+  memberships         Membership[]
+  sessions            Session[]
+  purchasedItems      ShoppingItem[]       @relation("PurchasedItems")
+  shoppingItems       ShoppingItem[]
+  assignedTasks       Task[]               @relation("AssignedTo")
 }
 
 model VerificationToken {
@@ -65,20 +67,20 @@ model VerificationToken {
 }
 
 model Colocation {
-  id             String               @id @default(uuid())
+  id             String              @id @default(uuid())
   name           String
   address        String
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
   calendarEvents CalendarEvent[]
   documents      Document[]
   expenses       Expense[]
+  settlements    ExpenseSettlement[]
   invitations    Invitation[]
   memberships    Membership[]
   messages       Message[]
   shoppingItems  ShoppingItem[]
   tasks          Task[]
-  settlements    ExpenseSettlement[]
 }
 
 model Membership {
@@ -119,9 +121,9 @@ model Expense {
   category     String
   date         DateTime
   receipt      String?
-  splitType    ExpenseSplitType     @default(EQUAL)
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
+  splitType    ExpenseSplitType     @default(EQUAL)
   colocation   Colocation           @relation(fields: [colocationId], references: [id], onDelete: Cascade)
   paidBy       User                 @relation("PaidBy", fields: [paidByUserId], references: [id])
   participants ExpenseParticipant[]
@@ -148,20 +150,20 @@ model ExpenseParticipant {
 }
 
 model ExpenseSettlement {
-  id           String   @id @default(uuid())
+  id           String     @id @default(uuid())
   expenseId    String?
   colocationId String
   fromUserId   String
   toUserId     String
-  amount       Decimal  @db.Decimal(10, 2)
+  amount       Decimal    @db.Decimal(10, 2)
   description  String?
-  date         DateTime @default(now())
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  expense      Expense? @relation("ExpenseSettlements", fields: [expenseId], references: [id], onDelete: SetNull)
+  date         DateTime   @default(now())
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   colocation   Colocation @relation(fields: [colocationId], references: [id], onDelete: Cascade)
-  fromUser     User     @relation("SettlementsFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
-  toUser       User     @relation("SettlementsTo", fields: [toUserId], references: [id], onDelete: Cascade)
+  expense      Expense?   @relation("ExpenseSettlements", fields: [expenseId], references: [id])
+  fromUser     User       @relation("SettlementsFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser       User       @relation("SettlementsTo", fields: [toUserId], references: [id], onDelete: Cascade)
 
   @@index([expenseId])
   @@index([colocationId])
@@ -188,16 +190,28 @@ model Task {
 }
 
 model ShoppingItem {
-  id           String     @id @default(uuid())
-  colocationId String
-  name         String
-  quantity     Int
-  purchased    Boolean    @default(false)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  colocation   Colocation @relation(fields: [colocationId], references: [id], onDelete: Cascade)
+  id               String     @id @default(uuid())
+  colocationId     String
+  name             String
+  quantity         Int        @default(1)
+  purchased        Boolean    @default(false)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  category         String?
+  needVerification Boolean    @default(false)
+  price            Float?
+  purchasedAt      DateTime?
+  shared           Boolean    @default(false)
+  unit             String?
+  userId           String
+  purchasedById    String?
+  colocation       Colocation @relation(fields: [colocationId], references: [id], onDelete: Cascade)
+  purchasedBy      User?      @relation("PurchasedItems", fields: [purchasedById], references: [id])
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([colocationId])
+  @@index([userId])
+  @@index([purchasedById])
 }
 
 model CalendarEvent {

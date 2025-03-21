@@ -24,6 +24,19 @@ export async function POST(req: Request) {
     
     const { email, name } = result.data;
     
+    // Vérifier si l'utilisateur existe déjà
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+    
+    // Si c'est une tentative de connexion (sans nom) et que l'utilisateur n'existe pas
+    if (!existingUser && !name) {
+      return NextResponse.json(
+        { message: "Aucun compte associé à cette adresse email" },
+        { status: 404 }
+      );
+    }
+    
     // Générer un code OTP à 6 chiffres
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
@@ -44,11 +57,6 @@ export async function POST(req: Request) {
       },
     });
     
-    // Vérifier si l'utilisateur existe déjà
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-    
     if (!existingUser && name) {
       // Si l'utilisateur n'existe pas et qu'un nom est fourni,
       // nous préparons un nouvel utilisateur (qui sera validé après vérification OTP)
@@ -63,11 +71,11 @@ export async function POST(req: Request) {
     // Envoyer l'email avec le code OTP
     let emailSent = false;
     if (process.env.NODE_ENV === 'production') {
-      emailSent = await sendOtpEmail(email, otp, name || existingUser?.name);
+      emailSent = await sendOtpEmail(email, otp, name || existingUser?.name || undefined);
     } else {
       // En développement, on peut tester l'envoi d'email ou simplement simuler
       if (process.env.SENDGRID_API_KEY) {
-        emailSent = await sendOtpEmail(email, otp, name || existingUser?.name);
+        emailSent = await sendOtpEmail(email, otp, name || existingUser?.name || undefined);
       } else {
         // Simuler l'envoi
         console.log(`[DEV] Code OTP pour ${email}: ${otp}`);

@@ -46,6 +46,17 @@ export const useColocations = () => {
     return response.data.colocations;
   };
 
+  // Récupérer la colocation active de l'utilisateur
+  const getActiveColocation = async (): Promise<Colocation | null> => {
+    try {
+      const response = await axios.get("/api/colocation/active");
+      return response.data.colocation;
+    } catch (error) {
+      console.error("Erreur lors de la récupération de la colocation active:", error);
+      return null;
+    }
+  };
+
   // Récupérer les détails d'une colocation spécifique
   const getColocationDetails = async (colocationId: string): Promise<Colocation> => {
     const response = await axios.get(`/api/colocation/${colocationId}`);
@@ -134,6 +145,14 @@ export const useColocations = () => {
     queryFn: getColocations,
   });
 
+  // Requête pour récupérer la colocation active
+  const useActiveColocationQuery = () => {
+    return useQuery({
+      queryKey: ["activeColocation"],
+      queryFn: getActiveColocation,
+    });
+  };
+
   // Fonction pour créer une requête de détails de colocation
   const useColocationDetailsQuery = (colocationId: string) => {
     return useQuery({
@@ -199,5 +218,8 @@ export const useColocations = () => {
     
     // Ajouter la fonction pour récupérer les détails d'une colocation
     useColocationDetailsQuery,
+    
+    // Ajouter la fonction pour récupérer la colocation active
+    useActiveColocationQuery,
   };
 }; 

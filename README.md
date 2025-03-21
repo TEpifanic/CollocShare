@@ -83,6 +83,52 @@ collocshare/
 3. Soumettre une pull request pour la revue de code
 4. Merger dans la branche principale après approbation
 
+## Améliorations futures
+
+Voici quelques améliorations envisagées pour les futures versions de CollocShare :
+
+### Système de notification
+
+- Notifications en temps réel pour les nouvelles dépenses et remboursements
+- Rappels automatiques pour les dépenses non réglées et les tâches à effectuer
+- Centre de notifications avec filtres et préférences personnalisables
+- Notifications par email et push mobile
+
+### Statistiques et insights
+
+- Tableaux de bord avec graphiques de dépenses par catégorie et par période
+- Historique détaillé des transactions et règlements
+- Vue d'ensemble de la situation financière de chaque membre
+- Rapports mensuels et export de données
+
+### Reconnaissance de tickets de caisse
+
+- Scan intelligent de tickets de caisse via appareil photo
+- Extraction automatique des articles et montants
+- Association avec les éléments de la liste de courses
+- Répartition automatique des dépenses basée sur les achats
+
+### Calendrier avancé
+
+- Intégration avec Google Calendar, Apple Calendar, etc.
+- Planification des tâches ménagères récurrentes
+- Rappels pour les événements importants (paiement de loyer, factures, etc.)
+- Création d'événements partagés (soirées, repas communs, etc.)
+
+### Gestion des stocks
+
+- Inventaire partagé des produits de base
+- Alertes automatiques quand un produit est presque épuisé
+- Liste de courses intelligente basée sur les habitudes d'achat
+- Gestion des dates de péremption
+
+### Application mobile
+
+- Version mobile native pour iOS et Android
+- Scan de tickets et prise de photos directement depuis l'app
+- Notifications push
+- Mode hors ligne pour accéder aux informations essentielles
+
 ## Licence
 
 MIT

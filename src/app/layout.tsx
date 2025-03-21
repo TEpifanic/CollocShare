@@ -4,6 +4,7 @@ import "./globals.css";
 import QueryProvider from "@/providers/QueryProvider";
 import AuthProvider from "@/providers/AuthProvider";
 import ToastProvider from "@/providers/ToastProvider";
+import { MainNav } from "@/components/navigation/MainNav";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,6 +16,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
@@ -27,7 +29,12 @@ export default function RootLayout({
       <body className={inter.className}>
         <AuthProvider>
           <QueryProvider>
-            <ToastProvider>{children}</ToastProvider>
+            <ToastProvider>
+              <MainNav />
+              <main className="md:pl-16 min-h-screen pb-16 md:pb-0">
+                {children}
+              </main>
+            </ToastProvider>
           </QueryProvider>
         </AuthProvider>
       </body>

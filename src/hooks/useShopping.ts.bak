@@ -1,0 +1,235 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+
+// Interface ShoppingItem basée sur le modèle Prisma
+export interface ShoppingItem {
+  id: string;
+  colocationId: string;
+  userId: string;
+  userName?: string; // Nom de l'utilisateur qui a ajouté l'article
+  name: string;
+  quantity: number;
+  unit?: string | null;
+  price?: number | null;
+  category?: string | null;
+  purchased: boolean;
+  purchasedBy?: string | null;
+  purchasedAt?: Date | null;
+  shared: boolean;
+  needVerification: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Type pour les données de création d'article
+export interface CreateShoppingItemData {
+  name: string;
+  quantity?: number;
+  unit?: string;
+  colocationId: string;
+  category?: string;
+  shared?: boolean;
+  needVerification?: boolean;
+}
+
+// Type pour les données de mise à jour d'article
+export interface UpdateShoppingItemData {
+  name?: string;
+  quantity?: number;
+  unit?: string;
+  category?: string;
+  shared?: boolean;
+  needVerification?: boolean;
+  purchased?: boolean;
+  price?: number;
+}
+
+// Type pour les données de marquage d'achat
+export interface PurchaseShoppingItemData {
+  price?: number;
+}
+
+// Interface pour les paramètres de marquage d'achat
+export interface PurchaseShoppingItemParams {
+  itemId: string;
+  data?: PurchaseShoppingItemData;
+}
+
+// Fonction pour récupérer les articles de courses d'une colocation
+const getShoppingItems = async (colocationId: string): Promise<ShoppingItem[]> => {
+  try {
+    const url = new URL("/api/shopping", window.location.origin);
+    url.searchParams.append("colocationId", colocationId);
+    
+    const response = await fetch(url.toString());
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("Erreur lors de la récupération des articles:", errorData);
+      throw new Error(errorData.error || "Erreur lors de la récupération des articles");
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Erreur lors de la récupération des articles:", error);
+    throw error;
+  }
+};
+
+// Fonction pour créer un article
+const createShoppingItem = async (data: CreateShoppingItemData): Promise<ShoppingItem> => {
+  try {
+    const response = await fetch("/api/shopping", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("Erreur lors de la création de l'article:", errorData);
+      throw new Error(errorData.error || "Erreur lors de la création de l'article");
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Erreur lors de la création de l'article:", error);
+    throw error;
+  }
+};
+
+// Fonction pour mettre à jour un article
+const updateShoppingItem = async (
+  itemId: string,
+  data: UpdateShoppingItemData
+): Promise<ShoppingItem> => {
+  try {
+    console.log(`Mise à jour de l'article ${itemId} avec les données:`, data);
+    const response = await fetch(`/api/shopping/${itemId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("Erreur lors de la mise à jour de l'article:", errorData);
+      throw new Error(errorData.error || "Erreur lors de la mise à jour de l'article");
+    }
+    
+    const result = await response.json();
+    console.log("Article mis à jour avec succès:", result);
+    return result;
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour de l'article:", error);
+    throw error;
+  }
+};
+
+// Fonction pour supprimer un article
+const deleteShoppingItem = async (itemId: string): Promise<void> => {
+  try {
+    console.log(`Suppression de l'article ${itemId}`);
+    const response = await fetch(`/api/shopping/${itemId}`, {
+      method: "DELETE",
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("Erreur lors de la suppression de l'article:", errorData);
+      throw new Error(errorData.error || "Erreur lors de la suppression de l'article");
+    }
+    
+    console.log("Article supprimé avec succès");
+  } catch (error) {
+    console.error("Erreur lors de la suppression de l'article:", error);
+    throw error;
+  }
+};
+
+// Hook personnalisé pour gérer les articles de courses
+export const useShopping = (colocationId?: string) => {
+  const queryClient = useQueryClient();
+
+  // Query pour récupérer tous les articles d'une colocation
+  const useShoppingItemsQuery = () => {
+    return useQuery({
+      queryKey: ["shopping", colocationId],
+      queryFn: () => (colocationId ? getShoppingItems(colocationId) : Promise.resolve([])),
+      enabled: !!colocationId,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+  };
+
+  // Mutation pour créer un article
+  const createShoppingItemMutation = useMutation({
+    mutationFn: createShoppingItem,
+    onSuccess: () => {
+      toast.success("Article ajouté à la liste de courses");
+      queryClient.invalidateQueries({ queryKey: ["shopping", colocationId] });
+    },
+    onError: (error: Error) => {
+      console.error("Erreur lors de l'ajout de l'article:", error);
+      toast.error(`Erreur: ${error.message}`);
+    },
+  });
+
+  // Mutation pour mettre à jour un article
+  const updateShoppingItemMutation = useMutation({
+    mutationFn: ({ itemId, data }: { itemId: string; data: UpdateShoppingItemData }) =>
+      updateShoppingItem(itemId, data),
+    onSuccess: () => {
+      toast.success("Article mis à jour");
+      queryClient.invalidateQueries({ queryKey: ["shopping", colocationId] });
+    },
+    onError: (error: Error) => {
+      console.error("Erreur lors de la mise à jour de l'article:", error);
+      toast.error(`Erreur: ${error.message}`);
+    },
+  });
+
+  // Mutation pour supprimer un article
+  const deleteShoppingItemMutation = useMutation({
+    mutationFn: deleteShoppingItem,
+    onSuccess: () => {
+      toast.success("Article supprimé de la liste de courses");
+      queryClient.invalidateQueries({ queryKey: ["shopping", colocationId] });
+    },
+    onError: (error: Error) => {
+      console.error("Erreur lors de la suppression de l'article:", error);
+      toast.error(`Erreur: ${error.message}`);
+    },
+  });
+
+  // Mutation pour marquer un article comme acheté
+  const purchaseShoppingItemMutation = useMutation({
+    mutationFn: ({ itemId, data }: PurchaseShoppingItemParams) =>
+      updateShoppingItem(itemId, { 
+        purchased: true,
+        price: data?.price 
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shopping", colocationId] });
+    },
+    onError: (error: Error) => {
+      console.error("Erreur lors du marquage de l'article comme acheté:", error);
+      toast.error(`Erreur: ${error.message}`);
+    },
+  });
+
+  return {
+    useShoppingItemsQuery,
+    createShoppingItem: createShoppingItemMutation.mutateAsync,
+    updateShoppingItem: updateShoppingItemMutation.mutateAsync,
+    deleteShoppingItem: deleteShoppingItemMutation.mutateAsync,
+    purchaseShoppingItem: purchaseShoppingItemMutation.mutateAsync,
+    isCreating: createShoppingItemMutation.isPending,
+    isUpdating: updateShoppingItemMutation.isPending,
+    isDeleting: deleteShoppingItemMutation.isPending,
+    isPurchasing: purchaseShoppingItemMutation.isPending,
+  };
+}; 
